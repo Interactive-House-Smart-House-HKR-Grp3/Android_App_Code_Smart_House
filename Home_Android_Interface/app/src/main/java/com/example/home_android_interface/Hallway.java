@@ -1,5 +1,7 @@
 package com.example.home_android_interface;
 
+
+
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -51,4 +53,138 @@ public class Hallway extends Fragment implements MqttCallback {
         fanswitch = view.findViewById(R.id.fanswicth);
 
         MqttClient client = null;
+
+
+        try {
+            client = new MqttClient("tcp://smart-mqtthive.duckdns.org:1883", "android_app11", new MemoryPersistence());
+            client.setCallback(this); // listener for messages
+            client.connect();
+            String topic = "smart_house/gui/fan"; //listening this topic
+            client.subscribe("smart_house/gui/window");
+            client.subscribe("smart_house/gui/door");
+            client.subscribe(topic); // listen to that topic
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+
+
+        final MqttClient finalClient = client; //onchecked method can only use final values
+
+        fanswitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+
+                    try {
+                        publish(finalClient, "smart_house/cmd/fan", "true");
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+
+                    try {
+                        publish(finalClient, "smart_house/cmd/fan", "false");
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        });
+        return view;
+    }
+
+    private void setTextThread(final TextView textView, final String text, final boolean switchCheck) {
+        Thread th = new Thread(new Runnable() {
+            public void run() {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        textView.setText(text);
+                        fanswitch.setChecked(switchCheck);
+
+                    }
+                });
+            }
+        });
+        th.start();
+    }
+
+    private void setTextThread2(final TextView textView, final String text) {
+        Thread th = new Thread(new Runnable() {
+            public void run() {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        textView.setText(text);
+
+                    }
+                });
+            }
+        });
+        th.start();
+    }
+    @Override
+    public void messageArrived(String topic, final MqttMessage message) throws Exception {
+        String payload = new String(message.getPayload());
+        System.out.println("##########################");
+        System.out.println(topic + " " + payload); // received from broker(server)
+
+
+        switch (topic) {
+            case "smart_house/gui/fan":
+                if (Boolean.parseBoolean(message.toString())) {
+                    setTextThread(fanstate, "ON", true);
+                } else {
+                    setTextThread(fanstate, "OFF", false);
+                }
+                break;
+            case "smart_house/gui/window":
+                if (Boolean.parseBoolean(message.toString())) {
+                    window.setImageResource(R.drawable.windowopen);
+                    setTextThread2(windowstate,payload.toUpperCase());
+                } else {
+                    window.setImageResource(R.drawable.windowclose);
+                    setTextThread2(windowstate, payload.toUpperCase());
+                }
+                break;
+
+            case "smart_house/gui/door":
+                if (Boolean.parseBoolean(message.toString())) {
+                    door.setImageResource(R.drawable.dooropen);
+                    setTextThread2(doorstate, payload.toUpperCase());
+                } else {
+                    door.setImageResource(R.drawable.doorclosed);
+                    setTextThread2(doorstate , payload.toUpperCase());
+                }
+                break;
+
+        }
+    }
+
+    @Override
+    public void connectionLost(Throwable cause) {
+
+    }
+
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken token) {
+
+    }
+    public void publish(MqttClient client, String topic, String message) throws MqttException {
+        if (!client.isConnected()) {
+            client.connect();
+        }
+        try {
+            client.publish(topic,
+                    new MqttMessage(message.getBytes())); //string  to byte array
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
 
