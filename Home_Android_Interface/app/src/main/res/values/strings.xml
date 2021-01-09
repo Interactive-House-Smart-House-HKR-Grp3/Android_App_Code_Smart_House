@@ -1,3 +1,8 @@
 <resources>
-    <string name="app_name">Home_Android_Interface</string>
+    <string name="app_name">HÖME</string>
+    <string name="todo">TODO</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
+    <string name="notification_activity">NotificationView</string>
+
 </resources>
