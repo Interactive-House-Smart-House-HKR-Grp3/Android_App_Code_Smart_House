@@ -91,9 +91,11 @@ public class TabActivity extends MainActivity {
         System.out.println(topic + " " + payload); // received from broker(server)
 
 
+        double elconsmp = Integer.valueOf(payload) / 1000;
+
         switch (topic) {
             case "smart_house/gui/el_consumption":
-                setTextThread(eleconsumption , payload);
+                setTextThread(eleconsumption , String.valueOf(elconsmp));
                 break;
 
         }
