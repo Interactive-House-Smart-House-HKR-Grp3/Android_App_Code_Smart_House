@@ -3,10 +3,16 @@ package com.example.home_android_interface;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.TextView;
@@ -176,7 +182,43 @@ public class MainActivity extends AppCompatActivity implements MqttCallback {
 
     }
 
+    public void addNotification(String alarmtype) {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
+        String CHANNEL_ID = "my_channel_01";
+        CharSequence name = "my_channel";
+        String Description = "This is my channel";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID , name , importance);
+        channel.setDescription(Description);
+        channel.enableLights(true);
+        channel.setLightColor(Color.RED);
+        channel.enableVibration(true);
+        channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+        channel.setShowBadge(false);
+        manager.createNotificationChannel(channel);
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(this, CHANNEL_ID)
+                        .setContentTitle(alarmtype) //set title of notification
+                        .setContentText(alarmtype+"Alarm is activated in your house!")//this is notification message
+                        .setAutoCancel(true) // makes auto cancel of notification
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT); //set priority of notification
+
+
+        Intent notificationIntent = new Intent(this, NotificationView.class);
+        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        //notification message will get at NotificationView
+        notificationIntent.putExtra("message", alarmtype+"Alarm is activated in your house please check it immediately!");
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(pendingIntent);
+
+        // Add as notification
+
+        manager.notify(0, builder.build());
+    }
 
 
 }
