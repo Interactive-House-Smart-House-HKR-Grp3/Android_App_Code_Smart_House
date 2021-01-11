@@ -54,6 +54,10 @@ public class MainActivity extends AppCompatActivity implements MqttCallback {
             client.connect();
             client.subscribe("smart_house/gui/temp_outdoor");
             client.subscribe("smart_house/gui/temp_indoor");
+            client.subscribe("smart_house/gui/hbreak_alarm");
+            client.subscribe("smart_house/gui/leakage");
+            client.subscribe("smart_house/gui/fire_alarm");
+            client.subscribe("smart_house/gui/power_cut");
 
         } catch (MqttException e) {
             e.printStackTrace();
@@ -118,11 +122,27 @@ public class MainActivity extends AppCompatActivity implements MqttCallback {
         th.start();
     }
 
+    private void setAlarm( final String alarm) {
+        Thread th = new Thread(new Runnable() {
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        addNotification(alarm);
+
+
+                    }
+                });
+            }
+        });
+        th.start();
+    }
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         String payload = new String(message.getPayload());
-        // System.out.println("##########################");
-        //System.out.println(topic + " " + payload); // received from broker(server)
+        System.out.println("##########################");
+        System.out.println(topic + " " + payload); // received from broker(server)
 
         payload = payload.substring(0,2) + "°C";
         switch (topic){
@@ -132,6 +152,19 @@ public class MainActivity extends AppCompatActivity implements MqttCallback {
 
             case "smart_house/gui/temp_outdoor":
                 setTextThread(outdoortemp,payload);
+                break;
+            case "smart_house/gui/fire_alarm":
+                setAlarm("Fire ");
+                break;
+            case "smart_house/gui/hbreak_alarm":
+                setAlarm("House Break-In ");
+                break;
+            case "smart_house/gui/leakage":
+                setAlarm("Water Leakage ");
+                break;
+            case "smart_house/gui/power_cut":
+                setAlarm("Power Cut ");
+                break;
         }
 
     }
